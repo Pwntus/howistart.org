@@ -32,6 +32,7 @@ convertFileToHtml file =
       dir = takeDirectory file
   in do
     copy_images (fromText $ T.pack $ joinPath [dir, "images"])
+    copy_examples (fromText $ T.pack $ joinPath [dir, "examples"])
     writeFile newFile "<apply template='post'><bind tag='post'>"
     readFile file >>= appendFile newFile . convertToHtml
     appendFile newFile "</bind></apply>"
@@ -43,6 +44,20 @@ copy_images dir = shelly $ verbosely $ do
       let sp = splitPath $ T.unpack (toTextIgnore dir)
       let path = joinPath (init $ drop (length sp - 3) sp)
       let newPath = fromText $ T.pack $ joinPath ["static", "images", path]
+      mkdir_p newPath
+      images <- ls dir
+      mapM_ (\f -> cp_r f newPath) images
+      return ()
+    False ->
+      return ()
+
+copy_examples dir = shelly $ verbosely $ do
+  exists <- test_d dir
+  case exists of
+    True -> do
+      let sp = splitPath $ T.unpack (toTextIgnore dir)
+      let path = joinPath (init $ drop (length sp - 3) sp)
+      let newPath = fromText $ T.pack $ joinPath ["static", "examples", path]
       mkdir_p newPath
       images <- ls dir
       mapM_ (\f -> cp_r f newPath) images
