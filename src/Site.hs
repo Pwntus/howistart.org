@@ -18,6 +18,7 @@ import Snap.Snaplet
 import Snap.Snaplet.Heist
 import Snap.Util.FileServe
 import Heist
+import Data.HashMap.Strict
 import qualified Control.Monad.CatchIO as C
 import qualified Data.ByteString as B
 ------------------------------------------------------------------------------
@@ -34,7 +35,7 @@ routes = [
   ,("/posts/:category/:key", ifTop postHandler)
   ,("/posts/:category", ifTop $ cRender "category")
   ,("/about", ifTop $ cRender "about")
-  ,("/static", serveDirectory "static")
+  ,("/static", serveDirectoryWith directory_config "static")
   ]
 
 postHandler :: Handler App App ()
@@ -45,6 +46,10 @@ postHandler = do
   cRender $ B.intercalate "/" ["posts", c, k, "index"]
 
 ------------------------------------------------------------------------------
+directory_config :: MonadSnap m => DirectoryConfig m
+directory_config =
+  defaultDirectoryConfig { mimeTypes = customMimeTypes }
+
 app :: SnapletInit App App
 app = makeSnaplet "app" "How I Start." Nothing $ do
   f <- liftIO $ Prelude.readFile "app.cfg"
@@ -66,3 +71,7 @@ catch500 :: Handler App App () -> Handler App App ()
 catch500 m = (m >> return ()) `C.catch` \(_::SomeException) -> do
   modifyResponse $ setResponseStatus 404 "Page Not Found"
   cRender "404"
+
+customMimeTypes :: MimeMap
+customMimeTypes =
+  insert ".b" "text/plain" defaultMimeTypes
