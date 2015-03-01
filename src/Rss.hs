@@ -20,6 +20,6 @@ rss p = R.showXML . R.rssToXML $
         "How I Start is a mix between a collection of development tutorials and The Setup."
         []
         [ [ R.Title $ (T.unpack $ _title x) ++ " by " ++ (T.unpack $ _author x)
-          , R.Link (fromJust (parseURI $ "http://www.howistart.org/posts/" ++ (T.unpack $ _title x) ++ "/" ++ (show $ _key x)))
+          , R.Link (fromJust (parseURI $ "http://www.howistart.org/posts/" ++ (T.unpack . T.toLower $ _title x) ++ "/" ++ (show $ _key x)))
           , R.Description (T.unpack $ _subheading x)
           , R.PubDate (read (T.unpack $ _published x) :: UTCTime)] | x <- p ]
