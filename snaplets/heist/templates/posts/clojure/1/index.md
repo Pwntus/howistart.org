@@ -1,4 +1,4 @@
-We are going to explore Clojure by creating a fun project together.  In particular, we will create a twitter bot that create its text based on a mashup of [Edward Lear's poetry] ((http://www.gutenberg.org/files/13650/13650-h/13650-h.htm) ), and a goodly selection of functional programming text taken from Wikipedia.
+We are going to explore Clojure by creating a fun project together.  In particular, we will create a twitter bot that create its text based on a mashup of [Edward Lear's poetry](http://www.gutenberg.org/files/13650/13650-h/13650-h.htm), and a goodly selection of functional programming text taken from Wikipedia.
 
 Why Edward Lear and Functional Programming?  First, because I really enjoy his poetry. I fondly remember reading his poetry to my children.   Some of my favorite poems are [The Pobble Who Has No Toes](http://www.gutenberg.org/files/13650/13650-h/13650-h.htm#pobble), [The Quangle Wangle's Hat](http://www.gutenberg.org/files/13650/13650-h/13650-h.htm#quangle), and [The Jumblies](http://www.gutenberg.org/files/13650/13650-h/13650-h.htm#jumblies).  The whimsical nature of his poetry, like his contemporary Lewis Carroll, have great appeal to me.  It is only natural that I should want to combine it with my other love, functional programming.  In fact, I feel that some of of terms in functional programming like _monad_ and _functor_,  could fit right in with Edward Lear's _Nonsense Songs_.  This humble bot aims to unite the spheres of functional programming and nonsense poetry.
 
@@ -410,7 +410,7 @@ Because we have randomness to deal with, we can use `with-redefs` to redefine `s
                  (take 8 (walk-chain prefix chain prefix)))))))))
 ```
 
-_Note:  You will have to restart your `lein test-refresh` after you implement the solution, since it will be stuck in a loop processing the endless result of the failing test :)_
+_Note:  The test will actually run forever since it is stuck in an endless loop.  You will have to restart your test-refresh session after you implement the solution._
 
 Adjusting our _generator.clj_, we first need a helper function that will turn our result chain into a string with spaces, so that we can count the chars and make sure that they are under the limit.  We will call it `chain->text`.
 
@@ -422,7 +422,7 @@ Adjusting our _generator.clj_, we first need a helper function that will turn ou
 It takes a chain like `["And" "the" "Pobble" "who"]` and gives us back the display text.
 
 ```clojure
-(chain->text `"And" "the" "Pobble" "who"])
+(chain->text ["And" "the" "Pobble" "who"])
 ;; -> "And the Pobble who"
 ```
 
@@ -886,7 +886,7 @@ We have successfully created and deployed a markov bot that will tweet for us.  
 * Deploy the application to Heroku.
 
 
-I hope you have enjoyed our Clojure bot creating journey. The full code for this project can be found at [https://github.com/gigasquid/markov-elear](https://github.com/gigasquid/markov-elear).  The twitter bot also lives here [@functionalELear](https://twitter.com/FunctionalELear)
+I hope you have enjoyed our Clojure bot creating journey. The full code for this project can be found at [https://github.com/gigasquid/markov-elear](https://github.com/gigasquid/markov-elear).  The twitter bot lives at [functionalELear](https://twitter.com/FunctionalELear)
 
 I encourage you to experiment and create your own _art bots_ and,  of course, to continue to explore and enjoy the wonderful world of Clojure.
 
