@@ -32,6 +32,7 @@ data CategoryAtom = Haskell
                   | Clojure
                   | Ocaml
                   | Nim
+                  | Cpp
                   deriving (Show, Read, Eq)
 
 data Category = Category T.Text T.Text T.Text
