@@ -47,7 +47,7 @@ account for the host platform. Neat, let's get started!
 
 ## The executable
 
-First though, we need to understand the basic building blocks of a C++
+First, we need to understand the basic building blocks of a C++
 executable (also known as a binary executable or just binary for short). While
 this might seem overly pedantic, it actually isn't as complicated as you might
 think (if you skip the less interesting parts). Knowledge about these building
@@ -79,7 +79,7 @@ flow chart showing some of the possibilities:
                                  |Static Lib| -
                                  +----------+
 
-Notice that I used referred to the external library in the above flow chart as a
+Notice that I referred to the external library in the above flow chart as a
 *static* library. There are actually two types of libraries, *static* and
 *dynamic* (also known as *shared*). Static libraries are bundled into the
 executable at compile time as you've just seen. Dynamics libraries are loaded on
@@ -262,7 +262,7 @@ specify the *symbols* in the library they wish to use. A symbol is, roughly
 speaking, the name given by the compiler to a variable name or function in your
 program. "Why can't they just use the name I gave it?" you might ask. The reason
 is because of features like function overloading, namespacing, templating, and a
-number of other features that make the givin visible name insufficient for
+number of other features that make the given visible name insufficient for
 unique identification purposes. The symbol is generally used by the linker at
 compile time to determine where in memory the data or function exists. For our
 purposes, we need to make this association at runtime, but fortunately, an API
@@ -313,7 +313,7 @@ Easy enough. We'll also add a header and source file to our test library.
 
 #pragma once
 
-// This line prevents C++ name mangling which will prevent dlsym from retrieving
+// This line prevents C++ name mangling which would prevent dlsym from retrieving
 // the correct symbols.
 extern "C"
 {
@@ -443,7 +443,7 @@ Running this on my machine generates output like the following:
     bar == 314159
 
 Note that after the second line of that output, I changed the contents of
-Test.cpp and reinvoked make to recompile the library. So far so good! Now that
+Test.cpp and reinvoked `make` to recompile the library. So far so good! Now that
 we have some grasp of the strange incantations of this program, we can start to
 think about a better way to structure it. One thing worth noting is our use of
 `extern "C"`. This has a special meaning in C++ and informs the compiler to not
@@ -665,7 +665,7 @@ is `Ret`. The first argument is unlikely to be contentious but the second is
 likely unfamiliar to those who haven't touched C++ since the advent of the C++11
 standard. The `...` syntax denotes a parameter pack and is useful for specifying
 a variadic number of arguments with varying types. For example, if I called this
-function like
+function like:
 
 ```c++
 Execute<char, int, float>("stuff", 7, 2.4f);
@@ -686,7 +686,7 @@ Execute<char, int, float>("stuff", 7, 2.4f);
 
 ```
 
-the compiler would interpret `Ret` as a `char`, `args...` would be expanded
+The compiler would interpret `Ret` as a `char`, `args...` would be expanded
 to 7 and 2.4f, and `Args...` would be expanded to an int and float type. This
 allows us to invoke `Execute` to first lookup the symbol, call it as a function
 with the appropriate arguments, and subsequently return the correct return
@@ -804,7 +804,7 @@ making to the library which I'll mention briefly in this section.
 
 First, the library as is will only work on Linux and OSX platforms. The way
 symbols get mapped and unmapped in memory is operating system dependent, and
-windows exposes its own set of functions for doing so: `LoadLibrary`,
+Windows exposes its own set of functions for doing so: `LoadLibrary`,
 `GetProcAddress`, and `FreeLibrary`. They are analogous to `dlopen`, `dlsym`,
 and `dlclose` respectively, and I will leave it as an exercise to the reader to
 implement this. There are at least two ways to accomplish this. One way is to
