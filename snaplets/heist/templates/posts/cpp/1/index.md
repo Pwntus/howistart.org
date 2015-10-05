@@ -31,6 +31,7 @@ end. However, here's a rough outline of what we *will* cover:
 configurations?
 - The implementation: How do we implement the project?
 - Some refinements: Touching up our implementation and discussing other improvements.
+- Testing and publishing: How do we make our library testable and package it?
 - Notes on writing code: How do I typically author C++ code?
 - The wrap-up: Where do I go from here?
 
@@ -239,6 +240,18 @@ int main()
     return 0;
 }
 ```
+
+As a side note, my preference for editing code varies based on the platform I am
+using. When developing on Windows, I prefer Visual Studio (which has improved
+dramatically since 2010, the version I first learned on). When developing on
+OSX, I use Xcode due to its integration with the various simulators for iOS
+devices. On Linux, I use Emacs with Vim emulation, or Eclipse when I need a
+visual debugger (I've had issues using Eclipse as an editor due to stability,
+although this may have been addressed in more recent builds since my last
+experience with it in 2014). When writing this article, I opted to use a simple
+text editor and the make system, as this is the most ubiquitous build system and
+the reader should be able to reproduce all the work with the IDE of their
+choosing relatively easily.
 
 At this point, you should install Premake if you haven't already for the
 operating system of your choice. With this, you should be able to invoke
@@ -943,6 +956,233 @@ application. It's worth noting that all the templating is not
 exposed to the main runtime executable, who has the luxury of an easy-to-use
 interface. Indeed, abstracting away common generic behavior can be a good tool
 to reduce complexity and code duplication if done correctly.
+
+# Testing and publishing
+
+Making manual changes to the library and recompiling it, followed by a keystroke
+to see if things worked visually is a pretty terrible workflow as far as
+detecting regressions goes. In this section, we'll make things a little neater
+and repeatable. We'll also discuss the mechanics of publishing our code so
+others can use it.
+
+For the purposes of this article, we will use
+[googletest](https://github.com/google/googletest) which is a batteries-included
+test suite which contains the necessities (assertions, test framework) and other
+amenities like test report generation and an optional
+[frontend](https://github.com/ospector/gtest-gbar). To make our repository
+self-contained, let's add `googletest` as a git submodule, and also add a
+Premake project for it.
+
+```bash
+git submodule add git@github.com:google/googletest.git
+```
+
+```lua
+// premake5.lua
+
+# ...
+
+  project "GoogleTest"
+    kind "StaticLib"
+    files { "googletest/googletest/src/gtest-all.cc" }
+    includedirs { "googletest/googletest/include", "googletest/googletest" }
+
+  project "RePlexRuntime"
+    kind "ConsoleApp"
+    files { "runtime/**.h", "runtime/**.cpp" }
+    includedirs { "lib/pub", "test/pub", "googletest/googletest/include" }
+    links { "GoogleTest" }
+```
+
+Now, the Google test framework is bundled in the repository and invoking
+`premake5 gmake` will compile it and link it to `RePlexRuntime`. Now to actually
+author the tests themselves. Let's first do a simple test to see how this all
+works.
+
+```c++
+// runtime/Main.cpp
+
+#include <gtest/gtest.h>
+
+TEST(SillyTest, IsFourPositive)
+{
+  EXPECT_GT(4, 0);
+}
+
+TEST(SillyTest, IsFourTimesFourSixteen)
+{
+  int x = 4;
+  EXPECT_EQ(x * x, 16);
+}
+
+int main(int argc, char** argv)
+{
+  // This allows us to call this executable with various command line arguments
+  // which get parsed in InitGoogleTest
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
+```
+
+Compiling and invoking `RePlexRuntime` generates the following output:
+
+    ./bin/Debug/RePlexRuntime
+    [==========] Running 2 tests from 1 test case.
+    [----------] Global test environment set-up.
+    [----------] 2 tests from SillyTest
+    [ RUN      ] SillyTest.IsFourPositive
+    [       OK ] SillyTest.IsFourPositive (0 ms)
+    [ RUN      ] SillyTest.IsFourTimesFourSixteen
+    [       OK ] SillyTest.IsFourTimesFourSixteen (0 ms)
+    [----------] 2 tests from SillyTest (0 ms total)
+    
+    [----------] Global test environment tear-down
+    [==========] 2 tests from 1 test case ran. (0 ms total)
+    [  PASSED  ] 2 tests.
+
+Great! To learn the feature set of the Google test framework more completely, I
+recommend reading it's documentation, starting with the
+[primer](https://github.com/google/googletest/blob/master/googletest/docs/Primer.md).
+As an exercise, I recommend recompiling the above with a failing test to see
+what happens before continuing. What we need is to provide a way for the tests
+to emit code as text, recompile, and continue at runtime. To do this, we'll
+author a fixture class.
+
+```c++
+// runtime/Main.cpp
+
+#include <RePlex.h>
+#include <Test.h>
+#include <cstdlib>
+#include <fstream>
+#include <gtest/gtest.h>
+
+const char* g_Test_v1 =
+  "#include \"pub/Test.h\"\n"
+  "int bar = 3;\n"
+  "int foo(int x)\n"
+  "{\n"
+  "  return x + 5;\n"
+  "}";
+
+const char* g_Test_v2 =
+  "#include \"pub/Test.h\"\n"
+  "int bar = -2;\n"
+  "int foo(int x)\n"
+  "{\n"
+  "  return x - 5;\n"
+  "}";
+
+class RePlexTest : public ::testing::Test
+{
+public:
+  // Called automatically at the start of each test case.
+  virtual void SetUp()
+  {
+    WriteFile("test/Test.cpp", g_Test_v1);
+    Compile(1);
+    TestModule::LoadLibrary();
+  }
+
+  // We'll invoke this function manually in the middle of each test case
+  void ChangeAndReload()
+  {
+    WriteFile("test/Test.cpp", g_Test_v2);
+    Compile(2);
+    TestModule::ReloadLibrary();
+  }
+
+  // Called automatically at the end of each test case.
+  virtual void TearDown()
+  {
+    TestModule::UnloadLibrary();
+    WriteFile("test/Test.cpp", g_Test_v1);
+    Compile(1);
+  }
+
+private:
+  void WriteFile(const char* path, const char* text)
+  {
+    // Open an output filetream, deleting existing contents
+    std::ofstream out(path, std::ios_base::trunc | std::ios_base::out);
+    out << text;
+  }
+
+  void Compile(int version)
+  {
+    if (version == m_version)
+    {
+      return;
+    }
+
+    m_version = version;
+    EXPECT_EQ(std::system("make"), 0);
+
+    // Super unfortunate sleep due to the result of make not being fully flushed
+    // by the time the command returns (there are more elegant ways to solve this)
+    sleep(1);
+  }
+
+  int m_version = 1;
+};
+```
+
+The fixture class should be fairly self explanatory. There are three primary
+methods for setup, teardown, and reloading the library. We keep track of the
+currently loaded library in a member variable `m_version` so we avoid
+recompiling the library if the one we want is already loaded (note that
+`m_version` defaults to 1 at the beginning). We also have two versions of
+`Test.cpp` that we will write out and compile at runtime. You'll have to change
+the function signatures of `Foo` in `Test.h` so things compile properly. To use
+the fixture, we use the `TEST_F` macro instead of the `TEST` macro like so:
+
+```c++
+TEST_F(RePlexTest, VariableReload)
+{
+  EXPECT_EQ(TestModule::GetBar(), 3);
+  ChangeAndReload();
+  EXPECT_EQ(TestModule::GetBar(), -2);
+}
+
+TEST_F(RePlexTest, FunctionReload)
+{
+  EXPECT_EQ(TestModule::Foo(4), 9);
+  ChangeAndReload();
+  EXPECT_EQ(TestModule::Foo(4), -1);
+}
+
+int main(int argc, char** argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
+```
+
+Running this will generate a fair bit of output due to the runtime compilation
+but we should have all our tests passing. A *bad* thing we did in order to make
+this work was the sleep in our `Compile` function. Even though the `system` call
+is synchronous, there is a race condition when reading the file from the disk
+which is being flushed by the `make` command. The sleep here is unfortunate
+because it makes the tests slower, and also makes the test non-deterministic.
+The proper way to implement these tests is to install a handler for a file
+change notification. The implementation of this will vary based on the platform,
+and is left as an exercise to the reader.
+
+At this point, we might decide that the library is good enough for others to
+use. The only file a 3rd-party user would need to leverage our library is
+`RePlex.h` (in other words, this is a "header-only" library). Thus, distribution
+is just a matter of copying `RePlex.h` into the include path of the target
+project. If we had needed to export compiled code in the form of a static or
+shared library, we have two options. First, we may opt to compile the library
+for all the various combinations of OS and architecture (x86/x64/etc) we might
+support. This library would then be distributable as a binary file.
+Alternatively, we can simply publish the code with the Premake script we
+authored and let the end user compile the code themselves and link the result to
+their own library or executable. These are the two primary options at the
+moment, and sadly, no unified "package manager" has been authored in the C++
+community (although the author of this article is very interested in efforts to
+do so).
+
 
 # Notes on writing code
 
