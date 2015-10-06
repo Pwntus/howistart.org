@@ -1187,8 +1187,8 @@ do so).
 # Notes on writing code
 
 Without getting into editor/IDE battles, I am posting below a survey of the
-various tools I use. If your favorite too isn't listed, it is either because I
-haven't tried it, or have an alternative. This isn't meant to be exhaustive or
+various tools I use. If your favorite tool isn't listed, it is either because I
+haven't tried it, or have reason to use an alternative. This isn't meant to be exhaustive or
 definitive. Rather it should be used as a starting point for someone just
 starting to experiment with the language.
 
@@ -1207,21 +1207,28 @@ can help you catch bugs
 batteries included that uses Vim modal 
 editing as its default mode (this is going to make me popular /s).
 - [unittest-cpp](https://github.com/unittest-cpp/unittest-cpp): A nice
-  lightweight framework for authoring unit tests
+lightweight framework for authoring unit tests if you don't need something as heavy duty as gtest.
+- [googletest](https://github.com/google/googletest): The Google Test framework used in this article.
 - [Premake](https://premake.github.io/download.html): Build configuration tool
   leveraged throughout this article (alternatives to consider include
   [bazel](http://bazel.io/), [CMake](https://cmake.org/),
   [FastBuild](http://www.fastbuild.org/docs/home.html), or
-  [Scons](http://www.scons.org/))
+  [Scons](http://www.scons.org/)). Meta-make systems like Premake and CMake have
+  supplanted simple Makefiles for more complex projects, and I personally favor
+  Premake due to its simplicity and modularized architecture (it also helps that
+  it isn't built on top of a strange DSL).
 - lldb/gdb: Command line debuggers for quick-and-dirty debugging if the code was
 compiled with Clang or GCC respectively
+- [Clang tools](http://clang.llvm.org/docs/ClangTools.html): A suite of tools
+  that should be part of any robust build pipeline including formatters,
+  linters, static analysis, and more.
 - [cppreference](http://en.cppreference.com/w/): Invaluable online reference for
   the C and C++ language and standard library
 
 There is also an entire gamut of profilers, heap analyzers, leak detectors, and
 more which vary based on operating system and task, which I will leave for
 perhaps another time. My recommendation regarding tools is, pick an IDE and
-learn it very well. Your skills will likely translate to other IDEs. It is a
+learn it very well (seriously!). Your skills will likely translate to other IDEs. It is a
 little difficult to recommend using only an editor (unless you have access to a
 plethora of editor scripts and features) when programming in C++, primarily
 because on-the-fly static analysis can save a lot of time by detecting compile
