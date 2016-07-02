@@ -588,7 +588,7 @@ online](http://hookrace.net/nim-brainfuck/brainfuck.html) in its full glory.
 
 As I said before, our interpreter is still pretty slow for the mandelbrot
 program. Let's write a procedure that creates [Nim code
-AST](http://nim-lang.org/macros.html) at compile time instead:
+AST](http://nim-lang.org/docs/macros.html) at compile time instead:
 
 ```nimrod
 import macros
